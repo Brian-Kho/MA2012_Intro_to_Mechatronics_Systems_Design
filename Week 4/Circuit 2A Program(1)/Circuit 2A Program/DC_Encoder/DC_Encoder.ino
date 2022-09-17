@@ -68,7 +68,7 @@ void loop() {
   }
     Serial.print("Current Position: ");  
     Serial.println(encoder_pos);
-    delay(10);
+    delay(100);
   }
 
 
