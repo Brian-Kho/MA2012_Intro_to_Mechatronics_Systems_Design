@@ -25,12 +25,14 @@ char keys[] = {'1','2','3','F',
                '7','8','9','/',
                '+','0','-','*'};
 
-#define NO_OF_CHAR 7
+#define NO_OF_CHAR 8
 char d[NO_OF_CHAR+1];//FIFO queue for characters to display
 
-int v1, v2;
-int ans;
-
+int v1 = 0;
+int v2 = 0;
+int ans = 0;
+int op_pos;
+char op;
 
 void setup(void) {
   int i;
@@ -51,52 +53,26 @@ void setup(void) {
   }
 
 void loop(void) {
-    //check if the keypad is hit
-    
-    
-    if(digitalRead(KB_DataAvailable)){
-      
-      KB_Read(); //read the keypad
-      
-      // set the cursor to column 0, line 1
-      // (note: line 1 is the second row, since counting begins with 0):
-      lcd.setCursor(0, 0);
-      // print the KEY being pressed:
-      lcd.print(d);
-      delay(800);
-    }
-      
-      
-    
-}
-
-void calculator(){
-  lcd.clear();
-  int i;
-  for(i=0; i<NO_OF_CHAR-1; i++){
-   
-    if (d[i] == '+' || d[i] == '-' || d[i] == '*' || d[i] == '/'){
-      int j;
-      for(j=0; j<i; j++){
-        v1 *= 10;
-        v1 = v1 + (d[j] - 48);
+  //check if the keypad is hit
+  if(digitalRead(KB_DataAvailable)){
+    KB_Read();
+    lcd.setCursor(0, 1);
+    lcd.print(d);
+    delay(500);
+    int i = 0;
+    for(i=0; i<NO_OF_CHAR; i++){
+      if(d[i]=='='){
+        calculator(); 
+        lcd.print(ans); 
       }
-      int k;
-      for(k=i+1; k<NO_OF_CHAR; k++){
-        v2 *= 10;
-        v2 = v2 + (d[k] - 48);  
-      }
-      ans = v1 + v2;
-      lcd.print(ans);
-      
-    }
-    else{
-      continue;  
+      if(d[i]=='F'){
+        
+          lcd.clear();
+          memset(d, 0, NO_OF_CHAR);
+          
+      }  
     }
   }
-  Serial.println(v1);
-  Serial.println(v2);
-  
 }
 
 void KB_Read() {
@@ -109,21 +85,51 @@ void KB_Read() {
 
   k=ka+kb*2+kc*4+kd*8; // combine the encoder outputs 
 
-  if(k == 7){
-    lcd.clear(); 
-    int i;
-    for(i=0; i<NO_OF_CHAR-1; i++){
-      d[i]--;
-    }
-    lcd.setCursor(0, 0);
-    calculator();
+  for(i=0;i<(NO_OF_CHAR-1);i++) d[i]=d[i+1];//move displayed characters in FIFO queue forward discarding the first one
+  d[NO_OF_CHAR-1]=keys[k]; // update the key into the queue
+  d[NO_OF_CHAR]=0; // end with NULL 
+}
 
+void calculator(){
+  int i=0;
+  for(i=0; i<NO_OF_CHAR; i++){
+    if(d[i]=='+' || d[i]=='-' || d[i]=='*' || d[i]=='/'){
+      op_pos = i;
+      op = d[i];  
+    }
   }
-  else{
-    for(i=0;i<(NO_OF_CHAR-1);i++) d[i]=d[i+1];//move displayed characters in FIFO queue forward discarding the first one
-    d[NO_OF_CHAR-1]=keys[k]; // update the key into the queue
-    d[NO_OF_CHAR]=0; // end with NULL
+  int j=0;
+  for(j=0; j<op_pos; j++){
+    if((d[j]-48)>=0 && (d[j]-48)<10){
+      v1 *= 10;
+      v1 = v1 + (d[j]-48);
+    }
+  }
+  int k=0;
+  for(k=op_pos+1; k<NO_OF_CHAR; k++){
+    if((d[k]-48)>=0 && (d[k]-48)<10){
+      v2 *= 10;
+      v2 = v2 + (d[k]-48);
+    }
+  }
+
+  switch(op){
+    case '+':
+      ans = v1+v2;
+      break;
+
+    case '-':
+      ans = v1-v2;
+      break;
+
+    case '*':
+      ans = v1*v2;
+      break;
+
+    case '/':
+      ans = round(v1/v2);
+      break;
   }
   
- 
+  lcd.clear();
 }
