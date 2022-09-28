@@ -33,6 +33,7 @@ int v2 = 0;
 int ans = 0;
 int op_pos;
 char op;
+int on=0;
 
 void setup(void) {
   int i;
@@ -53,24 +54,37 @@ void setup(void) {
   }
 
 void loop(void) {
-  //check if the keypad is hit
-  if(digitalRead(KB_DataAvailable)){
-    KB_Read();
-    lcd.setCursor(0, 1);
-    lcd.print(d);
-    delay(500);
-    int i = 0;
-    for(i=0; i<NO_OF_CHAR; i++){
-      if(d[i]=='='){
-        calculator(); 
-        lcd.print(ans); 
+  on=0;
+  while(on==0){
+    //check if the keypad is hit
+    if(digitalRead(KB_DataAvailable)){
+      KB_Read();
+      lcd.setCursor(0, 1);
+      if(on==0){
+        lcd.print(d);
       }
-      if(d[i]=='F'){
-        
-          lcd.clear();
-          memset(d, 0, NO_OF_CHAR);
+      delay(500);
+      for(int i=0; i<NO_OF_CHAR; i++){
+        if(d[i]=='='){
+          calculator(); 
+          lcd.print(ans);
+          v1 = 0;          // reset number 1
+          v2 = 0;          // reset number 2
+          ans = 0;
+          op = ' ';         // reset the operator
           
-      }  
+          if(on==1){
+            for(int j=0; j<NO_OF_CHAR+1; j++){
+              d[j] = ' ';
+            } 
+            lcd.clear();
+          }
+        }
+      }
+      if(on==1){
+        on=0;
+        break;  
+      }
     }
   }
 }
@@ -85,28 +99,34 @@ void KB_Read() {
 
   k=ka+kb*2+kc*4+kd*8; // combine the encoder outputs 
 
+  if(keys[k]=='F'){
+    on = 1;  
+  }
+  else{
+    on = 0;  
+  }
+
   for(i=0;i<(NO_OF_CHAR-1);i++) d[i]=d[i+1];//move displayed characters in FIFO queue forward discarding the first one
   d[NO_OF_CHAR-1]=keys[k]; // update the key into the queue
   d[NO_OF_CHAR]=0; // end with NULL 
 }
 
 void calculator(){
-  int i=0;
-  for(i=0; i<NO_OF_CHAR; i++){
+  for(int i=0; i<NO_OF_CHAR; i++){
     if(d[i]=='+' || d[i]=='-' || d[i]=='*' || d[i]=='/'){
       op_pos = i;
       op = d[i];  
     }
   }
-  int j=0;
-  for(j=0; j<op_pos; j++){
+
+  for(int j=0; j<op_pos; j++){
     if((d[j]-48)>=0 && (d[j]-48)<10){
       v1 *= 10;
       v1 = v1 + (d[j]-48);
     }
   }
-  int k=0;
-  for(k=op_pos+1; k<NO_OF_CHAR; k++){
+ 
+  for(int k=op_pos+1; k<NO_OF_CHAR; k++){
     if((d[k]-48)>=0 && (d[k]-48)<10){
       v2 *= 10;
       v2 = v2 + (d[k]-48);
@@ -132,4 +152,9 @@ void calculator(){
   }
   
   lcd.clear();
+}
+
+void reset_d() {
+  for (int l = 0;l<(NO_OF_CHAR);l++) d[l] = ' ';
+  d[NO_OF_CHAR] = 0;
 }
