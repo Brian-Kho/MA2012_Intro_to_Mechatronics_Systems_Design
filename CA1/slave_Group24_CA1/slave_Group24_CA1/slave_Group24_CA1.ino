@@ -1,3 +1,5 @@
+#include "pitches.h"
+
 #include <Servo.h>
 #include "UCN5804.h"
 
@@ -15,6 +17,9 @@
 #define RxD 10
 #define TxD 9
 
+int buzzerPin = 8;
+int note = NOTE_A4;
+
 Servo myServo;  // create servo object to control a servo
 
 int degree = 135;    // variable for servo position  
@@ -24,6 +29,7 @@ int y;
 UCN5804 myStepper(motorSteps, dirPin, stepPin, halfPin, phasePin);
 
 char recvChar;
+int on;
 
 SoftwareSerial slave(RxD, TxD);    //Slave arduino acts as a serial communication device
 
@@ -41,6 +47,10 @@ int x1;
 int x2;
 int x3;
 int start = 1;
+int count = 0;
+
+int pinLED1 = A4;
+int pinLED2 = A5;
 
 void setup() {
   // put your setup code here, to run once:
@@ -58,34 +68,72 @@ void setup() {
   pinMode(pin1, OUTPUT);
   pinMode(pin2, OUTPUT);
   attachInterrupt(digitalPinToInterrupt(encoderPinA), encoder, RISING); // Enable the external interrupt
+
+  pinMode(pinLED1, OUTPUT);
+  pinMode(pinLED2, OUTPUT);
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-  if(slave.available()){
+  
+  
+  if(slave.available()){  
+    count = 0;
     recvChar = slave.read();
+  
+//    if(recvChar=='9'){
+//      digitalWrite(pinLED1, LOW);
+//      digitalWrite(pinLED2, LOW);
+//      digitalWrite(4, HIGH);   
+//    }
+//    else{
+//      digitalWrite(pinLED1, HIGH);
+//      digitalWrite(pinLED2, HIGH);
+//    }
+    
     if(recvChar=='1' || recvChar=='2'){
       Serial.print(recvChar);
-     
-        while(start == 1){
-          x_manip(recvChar);
-        }
-        while(start == 2){
-          x_manip('3');  //goes to collection window
-        }
-        while(start == 0){
-          x_manip('0');  //goes back to origin
-        }
-        Serial.print("Target Postion: ");
-        Serial.println(targetPos);
       
-        Serial.print("Current Postion: ");
-        Serial.println(currentPos);
+      if(recvChar == '1'){
+        digitalWrite(pinLED1, HIGH);
+        delay(500);
+        digitalWrite(pinLED1, LOW);
+        delay(500);
+        digitalWrite(pinLED1, HIGH);
+        delay(500);
+        digitalWrite(pinLED1, LOW);
+        delay(500);
+      }
 
+      if(recvChar == '2'){
+        digitalWrite(pinLED2, HIGH);
+        delay(500);
+        digitalWrite(pinLED2, LOW);
+        delay(500);
+        digitalWrite(pinLED2, HIGH);
+        delay(500);
+        digitalWrite(pinLED2, LOW);
+        delay(500);
+      }
       
-//      myServo.write(degree);
-//      StepperMotor();
-//      ServoMotor();
+      while(start == 1){
+        x_manip(recvChar);
+      }
+      while(start == 2){
+        x_manip('3');  //goes to collection window
+      }
+      while(start == 0){
+        x_manip('0');  //goes back to origin
+        if(count > 10){
+          break;
+        }
+      }
+      Serial.print("Target Postion: ");
+      Serial.println(targetPos);
+    
+      Serial.print("Current Postion: ");
+      Serial.println(currentPos);
+
       slave.write('0');  
   
       
@@ -126,7 +174,7 @@ void x_manip(char key){
     
   //Speed control at different position
   //
-  if (abs(targetPos - currentPos)> error && (targetPos < currentPos)) {
+  if (abs(targetPos - currentPos)> error && (targetPos > currentPos)) {
     if(currentPos <= x1){
       motor_speed = 255;
       MotorClockwise(motor_speed);
@@ -158,7 +206,7 @@ void x_manip(char key){
     }
   }
 
-  else if (abs(targetPos - currentPos)> error && (targetPos > currentPos)){
+  else if (abs(targetPos - currentPos)> error && (targetPos < currentPos)){
     if(currentPos <= x1){
       motor_speed = 127;
       MotorCounterClockwise(motor_speed);
@@ -189,6 +237,7 @@ void x_manip(char key){
     if(start != 0){
       StepperMotor();
     }
+    count++;
   }
 
   delay(100);
@@ -225,6 +274,11 @@ void ServoMotor(){
     myServo.write(degree);                  // sets the servo position
     delay(15);                           // waits for the servo to get there
     start = 0; //goes back to origin
+    for(int j = 0; j < 2; j++){
+        tone(buzzerPin, note, 100);
+        delay(300);
+        noTone(buzzerPin);
+    }
   }
   else if (degree == 135){
     degree -= 90;
@@ -236,12 +290,12 @@ void ServoMotor(){
 
 void StepperMotor(){
   if (y == 0){
-    myStepper.step(200);
+    myStepper.step(-200);
     y += 5;
     ServoMotor();
   }
   else if (y == 5){
-    myStepper.step(-200);
+    myStepper.step(200);
     y -= 5;
     ServoMotor();
   }
