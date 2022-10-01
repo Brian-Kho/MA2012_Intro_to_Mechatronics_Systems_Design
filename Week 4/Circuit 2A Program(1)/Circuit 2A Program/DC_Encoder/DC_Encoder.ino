@@ -7,8 +7,8 @@
 */
 volatile long int encoder_pos = 0; 
 int motor_speed;
-int pin1 = 9;   // motor pin1
-int pin2 = 10;  // motor pin2
+int pin1 = 5;   // motor pin1
+int pin2 = 11;  // motor pin2
 int encoderPinA = 2;
 int encoderPinB = 3;
 int error = 10; // permissible error
@@ -52,7 +52,7 @@ void loop() {
   Serial.println(setPos);
   
   if (abs(setPos - encoder_pos)> error && (setPos > encoder_pos)) {
-    motor_speed = 100; // set the speed of the motor
+    motor_speed = 200; // set the speed of the motor
   } 
   else if (abs(setPos - encoder_pos)> error && (setPos < encoder_pos)){
     motor_speed = -100;
