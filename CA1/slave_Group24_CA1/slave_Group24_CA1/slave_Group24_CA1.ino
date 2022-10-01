@@ -1,5 +1,5 @@
 #include "pitches.h"
-
+#include <Wire.h>
 #include <Servo.h>
 #include "UCN5804.h"
 
@@ -54,6 +54,9 @@ int pinLED2 = A5;
 
 void setup() {
   // put your setup code here, to run once:
+  Wire.begin(1);
+  Wire.onReceive(receiveEvent); 
+  
   Serial.begin(9600);                                //start serial monitor, for communicating with the PC
 
   myServo.attach(4);  // attaches the servo on pin 4 to the servo object
@@ -75,7 +78,16 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  
+  on = Wire.read();
+  if (on == 1){
+        digitalWrite(pinLed,LOW);
+        digitalWrite(pinLed,LOW);
+  }
+  else{
+
+        digitalWrite(pinLED,HIGH);
+        digitalWrite(pinLED,HIGH);
+  }
   
   if(slave.available()){  
     count = 0;
