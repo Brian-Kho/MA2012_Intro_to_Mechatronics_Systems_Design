@@ -40,7 +40,7 @@ int targetPos = 0;   // target position, Max value is 65535, 1 rev is 371
 int x1;
 int x2;
 int x3;
-
+int start = 1;
 
 void setup() {
   // put your setup code here, to run once:
@@ -66,12 +66,15 @@ void loop() {
     recvChar = slave.read();
     if(recvChar=='1' || recvChar=='2'){
       Serial.print(recvChar);
-      while(1){
-        if(start == 1){
+     
+        while(start == 1){
           x_manip(recvChar);
         }
-        else{
-          x_manip('0');  
+        while(start == 2){
+          x_manip('3');  //goes to collection window
+        }
+        while(start == 0){
+          x_manip('0');  //goes back to origin
         }
         Serial.print("Target Postion: ");
         Serial.println(targetPos);
@@ -79,9 +82,12 @@ void loop() {
         Serial.print("Current Postion: ");
         Serial.println(currentPos);
 
-      }
+      
+//      myServo.write(degree);
+//      StepperMotor();
+//      ServoMotor();
       slave.write('0');  
-
+  
       
     }  
   }
@@ -100,14 +106,17 @@ void encoder(){
 void x_manip(char key){
   switch(key){
     case '1':
-      targetPos = 371 * 10;
+      targetPos = -371 * 10;
       break;
     case '2':
+      targetPos = -371 * 5;
+      break;
+    case '3':
       targetPos = 371 * 5;
       break;
     case '0':
       targetPos = 0;
-      break
+      break;
   }
 
   x1 = round(0.2 * targetPos);
@@ -115,8 +124,9 @@ void x_manip(char key){
   x3 = round(0.2 * targetPos);
 
     
-
-  if (abs(targetPos - currentPos)> error && (targetPos > currentPos)) {
+  //Speed control at different position
+  //
+  if (abs(targetPos - currentPos)> error && (targetPos < currentPos)) {
     if(currentPos <= x1){
       motor_speed = 255;
       MotorClockwise(motor_speed);
@@ -148,7 +158,7 @@ void x_manip(char key){
     }
   }
 
-  else if (abs(targetPos - currentPos)> error && (targetPos < currentPos)){
+  else if (abs(targetPos - currentPos)> error && (targetPos > currentPos)){
     if(currentPos <= x1){
       motor_speed = 127;
       MotorCounterClockwise(motor_speed);
@@ -176,6 +186,9 @@ void x_manip(char key){
     Serial.print("end: ");
     Serial.print("motor speed: ");
     Serial.println(motor_speed);
+    if(start != 0){
+      StepperMotor();
+    }
   }
 
   delay(100);
@@ -206,33 +219,30 @@ void MotorCounterClockwise(int power){
   }
 }
 
-void ServoMotor()
-{
-  if(degree == 45)
-  {
+void ServoMotor(){
+  if(degree == 45){
     degree += 90 ;
     myServo.write(degree);                  // sets the servo position
     delay(15);                           // waits for the servo to get there
+    start = 0; //goes back to origin
   }
-  else if (degree == 135)
-  {
+  else if (degree == 135){
     degree -= 90;
     myServo.write(degree);                  // sets the servo position
     delay(15);                           // waits for the servo to get there */ 
-    
+    start = 2; //goes to collection window
   }
 }
 
-void StepperMotor()
-{
-  if (y == 0)
-  {
+void StepperMotor(){
+  if (y == 0){
     myStepper.step(200);
     y += 5;
+    ServoMotor();
   }
-  else if (y == 5)
-  {
+  else if (y == 5){
     myStepper.step(-200);
     y -= 5;
+    ServoMotor();
   }
 }
